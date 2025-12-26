@@ -7,19 +7,19 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [HistoryEntity::class, BrowserData::class, PasswordData::class, DownloadData::class],
-    version = 5,
+    version = 6, // Naikkan ke 6 untuk mereset cache yang rusak
     exportSchema = false
 )
-abstract class `AppDatabase.kt` : RoomDatabase() {
+abstract class AppDatabase : RoomDatabase() {
     abstract fun browserDao(): BrowserDao
 
     companion object {
-        @Volatile private var INSTANCE: `AppDatabase.kt`? = null
-        fun getDatabase(context: Context): `AppDatabase.kt` {
+        @Volatile private var INSTANCE: AppDatabase? = null
+        fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    `AppDatabase.kt`::class.java, "rafi_browser_db"
+                    AppDatabase::class.java, "rafi_browser_db"
                 ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance

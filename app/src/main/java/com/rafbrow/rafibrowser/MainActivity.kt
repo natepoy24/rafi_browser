@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnSubtitle: Button
     private lateinit var fullscreenContainer: FrameLayout
     private lateinit var toggleIncognito: ToggleButton
-    private lateinit var db: `AppDatabase.kt`
+    private lateinit var db: AppDatabase
     private lateinit var btnSettings: ImageButton
     private lateinit var btnNewTabIcon: ImageButton
     private lateinit var btnCloseTabIcon: ImageButton
@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        db = `AppDatabase.kt`.getDatabase(this)
+        db = AppDatabase.getDatabase(this)
 
         // Binding UI
         webViewContainer = findViewById(R.id.webViewContainer)
@@ -173,7 +173,7 @@ class MainActivity : AppCompatActivity() {
     // --- FITUR RIWAYAT (BARU) ---
     private fun showHistoryList() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val history = db.browserDao().getAllHistory()
+            val history = db.historyDao().getAllHistory()
             withContext(Dispatchers.Main) {
                 val list = history.map { "${it.title}\n${it.url}" }
                 AlertDialog.Builder(this@MainActivity)
@@ -182,7 +182,7 @@ class MainActivity : AppCompatActivity() {
                         getCurrentWebView()?.loadUrl(history[which].url)
                     }
                     .setPositiveButton("Hapus Semua") { _, _ ->
-                        lifecycleScope.launch(Dispatchers.IO) { db.browserDao().clearHistory() }
+                        lifecycleScope.launch(Dispatchers.IO) { db.historyDao().clearHistory() }
                     }
                     .show()
             }
@@ -352,7 +352,7 @@ class MainActivity : AppCompatActivity() {
                 url?.let { currentUrl ->
                     lifecycleScope.launch(Dispatchers.IO) {
                         if (!toggleIncognito.isChecked) {
-                            db.browserDao().insertHistory(HistoryEntity(url = currentUrl, title = view?.title ?: "No Title"))
+                            db.historyDao().insertHistory(HistoryEntity(url = currentUrl, title = view?.title ?: "No Title"))
                         }
                     }
                 }
@@ -428,7 +428,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showHistoryAndBookmarks() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val history = db.browserDao().getAllHistory()
+            val history = db.historyDao().getAllHistory()
             val bookmarks = db.browserDao().getBookmarks()
             withContext(Dispatchers.Main) {
                 val options = arrayOf("📜 History", "⭐ Bookmarks")
