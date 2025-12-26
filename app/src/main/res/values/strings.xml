@@ -1,3 +1,17 @@
 <resources>
-    <string name="app_name">rafi browser</string>
+    <string name="app_name">Rafi Browser</string>
+    <string name="search_or_url_hint">Cari atau ketik URL</string>
+    <string name="bookmark_button_description">Simpan Bookmark</string>
+    <string name="password_manager_button_description">Pengelola Kata Sandi</string>
+    <string name="download_history_button_description">Riwayat Unduhan</string>
+    <string name="toggle_incognito_mode_description">Mode Penyamaran</string>
+    <string name="incognito_on">🕶️</string>
+    <string name="incognito_off">🌐</string>
+    <string name="new_tab_button_text">+ TAB</string>
+    <string name="delete_tab_button_text">HAPUS TAB</string>
+    <string name="app_title_lock">RAFI BROWSER</string>
+    <string name="lock_status_text">Terkunci. Gunakan Sidik Jari/PIN.</string>
+    <string name="pin_hint">PIN</string>
+    <string name="unlock_button_text">MASUK</string>
+    <string name="cc_button_text">CC</string>
 </resources>
