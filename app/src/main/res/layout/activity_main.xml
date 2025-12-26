@@ -37,6 +37,14 @@
             android:src="@android:drawable/btn_star_big_off"
             android:background="?attr/selectableItemBackgroundBorderless" />
 
+        <ToggleButton
+            android:id="@+id/toggleIncognito"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:textOff="🌐"
+            android:textOn="🕶️" />
+
         <ImageButton
             android:id="@+id/btnSettings"
             android:layout_width="40dp"
