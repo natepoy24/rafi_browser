@@ -23,6 +23,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -87,6 +88,19 @@ class MainActivity : AppCompatActivity() {
         btnSettings = findViewById(R.id.btnSettings)
         btnNewTabIcon = findViewById(R.id.btnNewTabIcon)
         btnCloseTabIcon = findViewById(R.id.btnCloseTabIcon)
+
+        val topBar = findViewById<LinearLayout>(R.id.topBar)
+
+        ViewCompat.setOnApplyWindowInsetsListener(topBar) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+            
+            // Memberikan padding atas sesuai tinggi Status Bar + Notch kamera
+            val topPadding = if (systemBars.top > displayCutout.top) systemBars.top else displayCutout.top
+            
+            v.setPadding(v.paddingLeft, topPadding, v.paddingRight, v.paddingBottom)
+            insets
+        }
 
         setupSecurity()
         setupChromeStyleUI()
@@ -218,8 +232,8 @@ class MainActivity : AppCompatActivity() {
         dm.enqueue(request)
 
         // Simpan ke Database
-        lifecycleScope.launch(Dispatchers.IO) {
-            db.browserDao().insertDownload(DownloadData(fileName = fileName, url = url))
+        lifecycleScope.launch(Dispatchers.IO) { 
+            db.browserDao().insertDownload(DownloadData(fileName = fileName, url = url)) 
         }
         Toast.makeText(this, "Unduhan dimulai...", Toast.LENGTH_SHORT).show()
     }
@@ -349,18 +363,19 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 if (currentTabIndex != -1 && tabList[currentTabIndex] == view) etUrl.setText(url)
                 
-                url?.let { currentUrl ->
+                url?.let { currUrl ->
+                    val pageTitle = view?.title ?: "No Title"
+                    
                     lifecycleScope.launch(Dispatchers.IO) {
                         if (!toggleIncognito.isChecked) {
-                            db.browserDao().insertHistory(HistoryEntity(url = currentUrl, title = view?.title ?: "No Title"))
+                            db.browserDao().insertHistory(HistoryEntity(url = currUrl, title = pageTitle))
                         }
                     }
+                    triggerAutofill(view as WebView, currUrl)
                 }
-                
-                url?.let { triggerAutofill(view as WebView, it) }
-                
                 injectCustomPlayerLogic(view as WebView)
             }
+
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val u = request?.url.toString()
                 return u.contains("tsyndicate") || u.contains("ad_")

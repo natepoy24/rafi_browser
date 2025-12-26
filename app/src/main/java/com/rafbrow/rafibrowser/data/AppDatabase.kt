@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [HistoryEntity::class, BrowserData::class, PasswordData::class, DownloadData::class],
-    version = 6, // Naikkan versi ke 6 untuk mereset cache
+    version = 7, // Naikkan versi ke 7 untuk mereset cache
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() { // Nama kelas harus bersih tanpa titik
