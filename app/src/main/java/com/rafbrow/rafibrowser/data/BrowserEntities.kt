@@ -10,12 +10,12 @@ data class HistoryEntity(
     @ColumnInfo(name = "timestamp") val timestamp: Long = System.currentTimeMillis()
 )
 
-@Entity(tableName = "browser_data") // Ini adalah 'BrowserData' yang dicari MainActivity
+@Entity(tableName = "browser_data")
 data class BrowserData(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     @ColumnInfo(name = "url") val url: String,
     @ColumnInfo(name = "title") val title: String,
-    @ColumnInfo(name = "type") val type: String, // "HISTORY" atau "BOOKMARK"
+    @ColumnInfo(name = "type") val type: String, // "BOOKMARK"
     @ColumnInfo(name = "timestamp") val timestamp: Long = System.currentTimeMillis()
 )
 

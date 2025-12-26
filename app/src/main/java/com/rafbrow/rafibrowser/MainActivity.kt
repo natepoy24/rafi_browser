@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnSubtitle: Button
     private lateinit var fullscreenContainer: FrameLayout
     private lateinit var toggleIncognito: ToggleButton
-    private lateinit var db: AppDatabase
+    private lateinit var db: `AppDatabase.kt`
     private lateinit var btnSettings: ImageButton
     private lateinit var btnNewTabIcon: ImageButton
     private lateinit var btnCloseTabIcon: ImageButton
@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        db = AppDatabase.getDatabase(this)
+        db = `AppDatabase.kt`.getDatabase(this)
 
         // Binding UI
         webViewContainer = findViewById(R.id.webViewContainer)
