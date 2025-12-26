@@ -7,10 +7,10 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [HistoryEntity::class, BrowserData::class, PasswordData::class, DownloadData::class],
-    version = 6, // Naikkan ke 6 untuk mereset cache yang rusak
+    version = 6, // Naikkan versi ke 6 untuk mereset cache
     exportSchema = false
 )
-abstract class AppDatabase : RoomDatabase() {
+abstract class AppDatabase : RoomDatabase() { // Nama kelas harus bersih tanpa titik
     abstract fun browserDao(): BrowserDao
 
     companion object {
