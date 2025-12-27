@@ -19,11 +19,11 @@
         android:id="@+id/etOldPin"
         android:layout_width="match_parent"
         android:layout_height="50dp"
+        android:backgroundTint="#F8F8F8"
         android:hint="PIN Lama"
         android:inputType="numberPassword"
         android:maxLength="4"
-        android:textColor="#FFF"
-        android:backgroundTint="#444"/>
+        android:textColor="#444" />
 
     <EditText
         android:id="@+id/etNewPin"
@@ -33,7 +33,7 @@
         android:hint="PIN Baru (4 Digit)"
         android:inputType="numberPassword"
         android:maxLength="4"
-        android:textColor="#FFF"
+        android:textColor="#F44336"
         android:backgroundTint="#444"/>
 
     <EditText
@@ -44,6 +44,6 @@
         android:hint="Konfirmasi PIN Baru"
         android:inputType="numberPassword"
         android:maxLength="4"
-        android:textColor="#FFF"
+        android:textColor="#F44336"
         android:backgroundTint="#444"/>
 </LinearLayout>

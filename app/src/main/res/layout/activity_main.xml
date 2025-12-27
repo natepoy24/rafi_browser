@@ -67,6 +67,16 @@
             app:tint="#FFFFFF" />
     </LinearLayout>
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_below="@id/topBar"
+        android:indeterminate="false"
+        android:progressDrawable="@drawable/progress_bar_bg"
+        android:visibility="gone" />
+
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
@@ -94,7 +104,7 @@
             android:id="@+id/btnNewTabIcon"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_add"
+            android:src="@drawable/ic_menu_add"
             app:tint="#FFFFFF"
             android:background="?attr/selectableItemBackgroundBorderless" />
 
@@ -116,7 +126,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
-            app:tint="#D32F2F"
+            app:tint="#FFFFFF"
             android:background="?attr/selectableItemBackgroundBorderless" />
     </LinearLayout>
 

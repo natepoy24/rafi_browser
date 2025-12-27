@@ -6,4 +6,5 @@
     <!-- ... other colors ... -->
     <color name="incognito_primary">#FF2C2C2C</color>
     <color name="normal_primary">#FF1E1E1E</color>
+    <color name="purple_500">#6200EE</color>
 </resources>

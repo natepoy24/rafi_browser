@@ -11,13 +11,29 @@
         android:layout_height="50dp"
         android:orientation="horizontal">
 
-        <ImageButton android:id="@+id/menuForward" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@android:drawable/ic_media_next" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
-        
-        <ImageButton android:id="@+id/menuAddBookmark" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@android:drawable/btn_star_big_off" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
-        
-        <ImageButton android:id="@+id/menuDuplicate" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@android:drawable/ic_menu_add" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
-        <ImageButton android:id="@+id/menuDownloadHistory" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@android:drawable/stat_sys_download_done" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
-        <ImageButton android:id="@+id/menuCC" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@android:drawable/ic_menu_manage" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
+        <ImageButton android:id="@+id/menuForward" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@drawable/ic_media_next" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
+
+        <ImageButton
+            android:id="@+id/menuCC"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/baseline_subtitles_24"
+            app:tint="#FFF" />
+
+        <ImageButton android:id="@+id/menuDuplicate" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@drawable/baseline_content_copy_24" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
+        <ImageButton android:id="@+id/menuDownload" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@android:drawable/stat_sys_download_done" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
+
+        <ImageButton
+            android:id="@+id/menuAddBookmark"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/btn_star_big_off"
+            app:tint="#FFF" />
+
     </LinearLayout>
 
     <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#444" android:layout_marginVertical="4dp"/>
