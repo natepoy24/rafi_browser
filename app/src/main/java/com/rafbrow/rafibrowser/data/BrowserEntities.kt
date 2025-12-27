@@ -16,7 +16,8 @@ data class BrowserData(
     @ColumnInfo(name = "url") val url: String,
     @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "type") val type: String, // "HISTORY" atau "BOOKMARK"
-    @ColumnInfo(name = "timestamp") val timestamp: Long = System.currentTimeMillis()
+    @ColumnInfo(name = "timestamp") val timestamp: Long = System.currentTimeMillis(),
+    val content: String
 )
 
 @Entity(tableName = "passwords")

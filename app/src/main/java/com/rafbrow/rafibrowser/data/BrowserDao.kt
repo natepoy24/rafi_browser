@@ -16,7 +16,6 @@ interface BrowserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBrowserData(data: BrowserData)
 
-    // FUNGSI HAPUS BARU
     @Query("DELETE FROM history_table WHERE id = :id")
     suspend fun deleteHistoryItem(id: Int)
 
@@ -26,10 +25,18 @@ interface BrowserDao {
     @Query("DELETE FROM history_table")
     suspend fun clearHistory()
 
-    // Passwords & Downloads (tetap sama)
-    @Insert suspend fun insertPassword(data: PasswordData)
-    @Query("SELECT * FROM passwords") suspend fun getAllPasswords(): List<PasswordData>
-    @Query("SELECT * FROM passwords WHERE site LIKE '%' || :site || '%' LIMIT 1") suspend fun getPasswordForSite(site: String): PasswordData?
-    @Insert suspend fun insertDownload(data: DownloadData)
-    @Query("SELECT * FROM downloads ORDER BY timestamp DESC") suspend fun getAllDownloads(): List<DownloadData>
+    @Insert
+    suspend fun insertPassword(data: PasswordData)
+
+    @Query("SELECT * FROM passwords")
+    suspend fun getAllPasswords(): List<PasswordData>
+
+    @Query("SELECT * FROM passwords WHERE site LIKE '%' || :site || '%' LIMIT 1")
+    suspend fun getPasswordForSite(site: String): PasswordData?
+
+    @Insert
+    suspend fun insertDownload(data: DownloadData)
+
+    @Query("SELECT * FROM downloads ORDER BY timestamp DESC")
+    suspend fun getAllDownloads(): List<DownloadData>
 }

@@ -2,4 +2,8 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- ... other colors ... -->
+    <color name="incognito_primary">#FF2C2C2C</color>
+    <color name="normal_primary">#FF1E1E1E</color>
 </resources>
