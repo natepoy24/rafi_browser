@@ -50,25 +50,27 @@ class MainActivity : AppCompatActivity() {
     private val PREFS_NAME = "RafiBrowserPrefs"
     private val KEY_PIN = "app_pin"
 
-    private val adBlockList = listOf("tsyndicate.com", "diffusedpassionquaking.com", "doubleclick.net", "popads.net", "onclickads.net")
+    private val adBlockList = listOf("tsyndicate.com", "diffusedpassionquaking.com", "doubleclick.net", "popads.net")
 
+    // --- INTERFACE UNTUK LOGIN ---
     inner class WebAppInterface {
         @JavascriptInterface
         fun processLogin(site: String, user: String, pass: String) {
             runOnUiThread {
                 if (!isIncognito && user.isNotEmpty() && pass.isNotEmpty()) {
-                    showSavePasswordDialog(site.replace("https://", "").split("/")[0], user, pass)
+                    showSavePasswordDialog(site, user, pass)
                 }
             }
         }
     }
 
+    // --- PICKER SUBTITLE ---
     private val pickSubtitleFile = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             val content = contentResolver.openInputStream(it)?.bufferedReader()?.use { it.readText() }
             if (content != null) {
                 val sanitized = content.replace("`", "\\`").replace("$", "\\$").replace("\n", "\\n").replace("\r", "")
-                getCurrentWebView()?.evaluateJavascript("window.loadExternalSubtitle(`${sanitized}`);", null)
+                getCurrentWebView()?.evaluateJavascript("window.loadSubtitleContent(`${sanitized}`);", null)
                 Toast.makeText(this, "Subtitle Dimuat!", Toast.LENGTH_SHORT).show()
             }
         }
@@ -108,7 +110,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnGo).setOnClickListener { loadWeb(etUrl.text.toString()) }
 
         etUrl.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_GO) { loadWeb(etUrl.text.toString()); hideKeyboard(); true } else false
+            if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE) {
+                loadWeb(etUrl.text.toString()); hideKeyboard(); true
+            } else false
         }
 
         swipeRefresh.setOnRefreshListener { getCurrentWebView()?.reload() }
@@ -116,6 +120,7 @@ class MainActivity : AppCompatActivity() {
         setupSecurity()
     }
 
+    // --- TAB LOGIC ---
     private fun addNewTab(url: String) {
         val wv = WebView(this)
         setupWebViewSettings(wv)
@@ -146,7 +151,6 @@ class MainActivity : AppCompatActivity() {
         webViewContainer.addView(selectedWv, FrameLayout.LayoutParams(-1, -1))
         updateTabSwitcherUI()
         etUrl.setText(selectedWv.url)
-        selectedWv.viewTreeObserver.addOnScrollChangedListener { swipeRefresh.isEnabled = selectedWv.scrollY == 0 }
     }
 
     private fun updateTabSwitcherUI() {
@@ -174,6 +178,7 @@ class MainActivity : AppCompatActivity() {
         getCurrentWebView()?.loadUrl(url)
     }
 
+    // --- SETTINGS WEBVIEW & INJECT PLAYER ---
     @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     private fun setupWebViewSettings(wv: WebView) {
         wv.settings.apply {
@@ -182,9 +187,8 @@ class MainActivity : AppCompatActivity() {
             allowFileAccess = true
             mediaPlaybackRequiresUserGesture = false
             setSupportMultipleWindows(false)
-            javaScriptCanOpenWindowsAutomatically = false
         }
-        wv.addJavascriptInterface(WebAppInterface(), "Android")
+        wv.addJavascriptInterface(WebAppInterface(), "AndroidInterface")
 
         wv.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
@@ -200,6 +204,8 @@ class MainActivity : AppCompatActivity() {
                 fullscreenContainer?.addView(customView)
                 (window.decorView as FrameLayout).addView(fullscreenContainer, FrameLayout.LayoutParams(-1, -1))
                 findViewById<RelativeLayout>(R.id.mainRootLayout).visibility = View.GONE
+                // Tampilkan Overlay di mode Fullscreen
+                wv.evaluateJavascript("if(window.updateOverlayDisplay) window.updateOverlayDisplay(true);", null)
             }
             override fun onHideCustomView() {
                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -208,6 +214,7 @@ class MainActivity : AppCompatActivity() {
                 customViewCallback?.onCustomViewHidden()
                 customView = null
                 findViewById<RelativeLayout>(R.id.mainRootLayout).visibility = View.VISIBLE
+                wv.evaluateJavascript("if(window.updateOverlayDisplay) window.updateOverlayDisplay(false);", null)
             }
         }
 
@@ -217,13 +224,9 @@ class MainActivity : AppCompatActivity() {
                 for (ad in adBlockList) { if (url.contains(ad)) return true }
                 return false
             }
-            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
-                webViewContainer.animate().alpha(0.5f).setDuration(200).start()
-            }
             override fun onPageFinished(view: WebView?, url: String?) {
                 if (view == getCurrentWebView()) etUrl.setText(url)
                 swipeRefresh.isRefreshing = false
-                webViewContainer.animate().alpha(1.0f).setDuration(300).start()
                 val pageTitle = view?.title ?: "No Title"
                 injectCustomPlayerLogic(view as WebView)
                 if (!isIncognito && url != null) {
@@ -247,97 +250,133 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun injectCustomPlayerLogic(wv: WebView) {
-        val s1 = "$1"
-        val s2 = "$2"
-        val js = """
+        val d = "$" // Untuk menghindari konflik String Template Kotlin
+        val jsCode = """
             (function() {
-                var vs = document.getElementsByTagName('video');
-                if (vs.length === 0) return;
-                for (var i = 0; i < vs.length; i++) {
-                    var v = vs[i];
-                    v.style.filter = 'contrast(1.05)';
-                    v.setAttribute('webkit-playsinline', 'true');
-                    v.setAttribute('playsinline', 'true');
-                    var lt = 0;
-                    var pt;
-                    v.addEventListener('touchstart', function(e) {
-                        var n = Date.now();
-                        if ((n - lt < 300) && (n - lt > 0)) {
-                            if (e.cancelable) e.preventDefault();
-                            var r = v.getBoundingClientRect();
-                            var touchX = e.touches[0].clientX - r.left;
-                            if (touchX > r.width / 2) { v.currentTime += 10; } 
-                            else { v.currentTime -= 10; }
-                        }
-                        lt = n;
-                        pt = setTimeout(function() { v.playbackRate = 2.0; }, 500);
-                    }, { passive: false });
-                    v.addEventListener('touchend', function() { clearTimeout(pt); v.playbackRate = 1.0; });
-                    v.addEventListener('touchcancel', function() { clearTimeout(pt); v.playbackRate = 1.0; });
+                if (window.isMyPlayerInjected) return;
+                window.isMyPlayerInjected = true;
+                var currentSubtitleData = []; var lastTapTime = 0; var holdTimer = null;
+
+                function listenForLogin() {
+                    var forms = document.getElementsByTagName('form');
+                    for (var i = 0; i < forms.length; i++) {
+                        forms[i].addEventListener('submit', function() {
+                            var user = ""; var pass = "";
+                            var inputs = this.getElementsByTagName('input');
+                            for (var j = 0; j < inputs.length; j++) {
+                                if (inputs[j].type === 'password') {
+                                    pass = inputs[j].value;
+                                    if (j > 0) user = inputs[j-1].value;
+                                }
+                            }
+                            if (pass !== "") AndroidInterface.processLogin(window.location.hostname, user, pass);
+                        });
+                    }
                 }
-                window.loadExternalSubtitle = function(srt) {
-                    var vtt = "WEBVTT\n\n" + srt.replace(/(\d+:\d+:\d+),(\d+)/g, "$s1.$s2");
-                    var b = new Blob([vtt], { type: 'text/vtt' });
-                    var u = URL.createObjectURL(b);
-                    for (var j = 0; j < vs.length; j++) {
-                        var v = vs[j];
-                        var old = v.querySelectorAll('track');
-                        for (var k = 0; k < old.length; k++) { old[k].remove(); }
-                        var t = document.createElement('track');
-                        t.kind = 'subtitles';
-                        t.label = 'Rafi Sub';
-                        t.srclang = 'id';
-                        t.src = u;
-                        t.default = true;
-                        v.appendChild(t);
-                        if (v.textTracks && v.textTracks.length > 0) { v.textTracks[0].mode = 'showing'; }
+
+                window.updateOverlayDisplay = function(show) {
+                    var overlays = document.querySelectorAll('.my-custom-overlay');
+                    overlays.forEach(function(ov) { ov.style.display = show ? 'flex' : 'none'; });
+                };
+
+                function initPlayer() {
+                    var vids = document.getElementsByTagName('video');
+                    for(var i=0; i<vids.length; i++) setupOverlay(vids[i]);
+                }
+
+                function setupOverlay(video) {
+                    if (video.hasMyOverlay || video.offsetWidth < 100) return;
+                    video.hasMyOverlay = true;
+                    var overlay = document.createElement('div');
+                    overlay.className = 'my-custom-overlay';
+                    overlay.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; z-index:2147483647; display:none; flex-direction:column; align-items:center; -webkit-tap-highlight-color: transparent;';
+                    
+                    var speed = document.createElement('div');
+                    speed.innerText = '2x Speed';
+                    speed.style.cssText = 'color:white; font-size:14px; font-weight:bold; background:rgba(0,0,0,0.6); padding:4px 12px; border-radius:20px; margin-top: 20px; display:none; pointer-events: none;';
+                    overlay.appendChild(speed);
+
+                    var skip = document.createElement('div');
+                    skip.style.cssText = 'color:white; font-size:25px; font-weight:bold; margin-top: auto; margin-bottom: auto; opacity: 0; transition: opacity 0.3s; pointer-events: none;';
+                    overlay.appendChild(skip);
+
+                    var subBox = document.createElement('div');
+                    subBox.style.cssText = 'position:absolute; bottom:15%; width:90%; color:#FFFFFF; font-size:18px; text-shadow: 2px 2px 3px #000; text-align:center; padding:8px; border-radius:8px; pointer-events: none; display: none; background:rgba(0,0,0,0.5);';
+                    overlay.appendChild(subBox);
+
+                    overlay.addEventListener('touchstart', function(e) {
+                        holdTimer = setTimeout(function() { video.playbackRate = 2.0; speed.style.display = 'block'; }, 400);
+                    });
+
+                    overlay.addEventListener('touchend', function(e) {
+                        clearTimeout(holdTimer); video.playbackRate = 1.0; speed.style.display = 'none';
+                        var now = Date.now(); var diff = now - lastTapTime;
+                        var x = e.changedTouches[0].clientX; var w = window.innerWidth;
+                        if (diff < 300 && diff > 0) {
+                            if (e.cancelable) e.preventDefault();
+                            if (x < w * 0.4) { video.currentTime -= 10; skip.innerText = "⏪ -10s"; skip.style.opacity = 1; }
+                            else if (x > w * 0.6) { video.currentTime += 10; skip.innerText = "⏩ +10s"; skip.style.opacity = 1; }
+                            setTimeout(() => skip.style.opacity = 0, 600);
+                        } else {
+                            if (x > w * 0.4 && x < w * 0.6) { if (video.paused) video.play(); else video.pause(); }
+                        }
+                        lastTapTime = now;
+                    });
+
+                    if (video.parentElement) {
+                        video.parentElement.style.position = 'relative';
+                        video.parentElement.appendChild(overlay);
+                    }
+
+                    video.addEventListener('timeupdate', function() {
+                        if (currentSubtitleData.length > 0) {
+                            var t = video.currentTime;
+                            var s = currentSubtitleData.find(x => t >= x.start && t <= x.end);
+                            if (s) { subBox.innerText = s.text; subBox.style.display = 'block'; } 
+                            else { subBox.style.display = 'none'; }
+                        }
+                    });
+                }
+
+                window.loadSubtitleContent = function(srt) {
+                    currentSubtitleData = [];
+                    var pattern = /(\d+)\n(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})\n([\s\S]*?)(?=\n\n|\n${d}|${d})/g;
+                    var match;
+                    function t2s(t) { var p = t.split(':'); var s = p[2].split(','); return parseInt(p[0])*3600 + parseInt(p[1])*60 + parseInt(s[0]) + parseInt(s[1])/1000; }
+                    while ((match = pattern.exec(srt)) !== null) {
+                        currentSubtitleData.push({ start: t2s(match[2]), end: t2s(match[3]), text: match[4].replace(/\n/g, ' ').replace(/<[^>]*>/g, '') });
                     }
                 };
-                document.querySelectorAll('div[class*="overlay"], div[class*="popup"]').forEach(function(el) {
-                    if (el.offsetWidth > window.innerWidth * 0.4) el.remove();
-                });
+                
+                listenForLogin();
+                setInterval(initPlayer, 2000);
             })();
         """.trimIndent()
-        wv.evaluateJavascript(js, null)
+        wv.evaluateJavascript(jsCode, null)
     }
 
     private fun showChromeMenu(anchor: View) {
         val layout = layoutInflater.inflate(R.layout.popup_browser_menu, null)
         val popup = PopupWindow(layout, dpToPx(240), ViewGroup.LayoutParams.WRAP_CONTENT, true)
         popup.animationStyle = R.style.ChromeMenuAnimation
-        popup.elevation = 30f
 
-        layout.findViewById<ImageButton>(R.id.menuForward).setOnClickListener { getCurrentWebView()?.goForward(); popup.dismiss() }
         layout.findViewById<ImageButton>(R.id.menuAddBookmark).setOnClickListener {
             val wv = getCurrentWebView()
-            wv?.let { lifecycleScope.launch(Dispatchers.IO) { db.browserDao().insertBrowserData(BrowserData(url = it.url!!, title = it.title!!, content = "", type = "BOOKMARK")) } }
+            if (wv?.url != null) {
+                lifecycleScope.launch(Dispatchers.IO) { db.browserDao().insertBrowserData(BrowserData(url = wv.url!!, title = wv.title!!, content = "", type = "BOOKMARK")) }
+                Toast.makeText(this, "Tersimpan!", Toast.LENGTH_SHORT).show()
+            }
             popup.dismiss()
         }
-        layout.findViewById<ImageButton>(R.id.menuDuplicate).setOnClickListener { getCurrentWebView()?.url?.let { addNewTab(it) }; popup.dismiss() }
         layout.findViewById<ImageButton>(R.id.menuDownload).setOnClickListener { startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)); popup.dismiss() }
         layout.findViewById<ImageButton>(R.id.menuCC).setOnClickListener { pickSubtitleFile.launch("*/*"); popup.dismiss() }
-
         layout.findViewById<TextView>(R.id.optBookmarks).setOnClickListener { showBookmarkListDialog(); popup.dismiss() }
         layout.findViewById<TextView>(R.id.optHistory).setOnClickListener { showRiwayatDialog(); popup.dismiss() }
         val txtIncognito = layout.findViewById<TextView>(R.id.optIncognito)
-        txtIncognito.text = if (isIncognito) "🌐 Mode Normal" else "🕶️ Mode Penyamaran"
+        txtIncognito.text = if (isIncognito) "🌐 Normal" else "🕶️ Penyamaran"
         txtIncognito.setOnClickListener { isIncognito = !isIncognito; animateThemeChange(isIncognito); popup.dismiss() }
         layout.findViewById<TextView>(R.id.optChangePin).setOnClickListener { showChangePinDialog(); popup.dismiss() }
         popup.showAsDropDown(anchor, 0, 0, Gravity.END)
-    }
-
-    private fun showRiwayatDialog() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val history = db.browserDao().getAllHistory()
-            withContext(Dispatchers.Main) { showCustomActionList("📜 Riwayat", history, true) }
-        }
-    }
-
-    private fun showBookmarkListDialog() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val bookmarks = db.browserDao().getBookmarks()
-            withContext(Dispatchers.Main) { showCustomActionList("🔖 Bookmarks", bookmarks, false) }
-        }
     }
 
     private fun showCustomActionList(title: String, data: List<Any>, isHistory: Boolean) {
@@ -369,16 +408,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSecurity() {
-        val executor = ContextCompat.getMainExecutor(this)
-        val biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
+        val biometricPrompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) { lockOverlay.visibility = View.GONE }
         })
-        val promptInfo = BiometricPrompt.PromptInfo.Builder().setTitle("Kunci").setAllowedAuthenticators(android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_STRONG).setNegativeButtonText("Gunakan PIN").build()
+        val promptInfo = BiometricPrompt.PromptInfo.Builder().setTitle("Kunci").setAllowedAuthenticators(android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_STRONG).setNegativeButtonText("PIN").build()
         biometricPrompt.authenticate(promptInfo)
         findViewById<Button>(R.id.btnUnlockPin).setOnClickListener {
             val input = findViewById<EditText>(R.id.etPinEntry).text.toString()
-            val saved = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString(KEY_PIN, "1234")
-            if (input == saved) { lockOverlay.visibility = View.GONE; hideKeyboard() } else Toast.makeText(this, "Salah!", Toast.LENGTH_SHORT).show()
+            if (input == getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString(KEY_PIN, "1234")) { lockOverlay.visibility = View.GONE; hideKeyboard() } else Toast.makeText(this, "Salah!", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -403,4 +440,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun dpToPx(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
     private fun hideKeyboard() { (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(etUrl.windowToken, 0) }
+    private fun showRiwayatDialog() { lifecycleScope.launch(Dispatchers.IO) { val data = db.browserDao().getAllHistory(); withContext(Dispatchers.Main) { showCustomActionList("📜 Riwayat", data, true) } } }
+    private fun showBookmarkListDialog() { lifecycleScope.launch(Dispatchers.IO) { val data = db.browserDao().getBookmarks(); withContext(Dispatchers.Main) { showCustomActionList("🔖 Bookmarks", data, false) } } }
+
+    override fun onCreateContextMenu(menu: ContextMenu, v: View, m: ContextMenu.ContextMenuInfo?) {
+        val res = (v as WebView).hitTestResult
+        if (res.extra != null) { menu.setHeaderTitle("Opsi Link"); menu.add(0, 1, 0, "Tab Baru"); menu.add(0, 2, 0, "Salin Link") }
+    }
+
+    override fun onContextItemSelected(item: MenuItem): Boolean {
+        val url = getCurrentWebView()?.hitTestResult?.extra ?: ""
+        if (item.itemId == 1 && url.isNotEmpty()) addNewTab(url) else if (item.itemId == 2 && url.isNotEmpty()) (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("URL", url))
+        return true
+    }
 }
