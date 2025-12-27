@@ -1,0 +1,39 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="230dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/popup_bg"
+    android:orientation="vertical"
+    android:padding="6dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="horizontal">
+
+        <ImageButton android:id="@+id/menuForward" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@android:drawable/ic_media_next" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
+        
+        <ImageButton android:id="@+id/menuAddBookmark" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@android:drawable/btn_star_big_off" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
+        
+        <ImageButton android:id="@+id/menuDuplicate" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@android:drawable/ic_menu_add" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
+        <ImageButton android:id="@+id/menuDownloadHistory" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@android:drawable/stat_sys_download_done" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
+        <ImageButton android:id="@+id/menuCC" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:src="@android:drawable/ic_menu_manage" android:background="?attr/selectableItemBackgroundBorderless" app:tint="#FFF"/>
+    </LinearLayout>
+
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#444" android:layout_marginVertical="4dp"/>
+
+    <TextView android:id="@+id/optBookmarks" android:layout_width="match_parent" android:layout_height="48dp" android:text="🔖 Kelola Bookmark" android:textColor="#FFF" android:gravity="center_vertical" android:paddingHorizontal="12dp" android:background="?attr/selectableItemBackground"/>
+    <TextView android:id="@+id/optHistory" android:layout_width="match_parent" android:layout_height="48dp" android:text="📜 Riwayat Penjelajahan" android:textColor="#FFF" android:gravity="center_vertical" android:paddingHorizontal="12dp" android:background="?attr/selectableItemBackground"/>
+    <TextView android:id="@+id/optPasswords" android:layout_width="match_parent" android:layout_height="48dp" android:text="🔑 Pengelola Sandi" android:textColor="#FFF" android:gravity="center_vertical" android:paddingHorizontal="12dp" android:background="?attr/selectableItemBackground"/>
+    <TextView android:id="@+id/optIncognito" android:layout_width="match_parent" android:layout_height="48dp" android:text="🕶️ Mode Penyamaran" android:textColor="#FFF" android:gravity="center_vertical" android:paddingHorizontal="12dp" android:background="?attr/selectableItemBackground"/>
+    <TextView 
+        android:id="@+id/optChangePin" 
+        android:layout_width="match_parent" 
+        android:layout_height="48dp" 
+        android:text="🔐 Ubah PIN Aplikasi" 
+        android:textColor="#FFF" 
+        android:gravity="center_vertical" 
+        android:paddingHorizontal="16dp" 
+        android:textSize="14sp" 
+        android:background="?attr/selectableItemBackground"/>
+</LinearLayout>

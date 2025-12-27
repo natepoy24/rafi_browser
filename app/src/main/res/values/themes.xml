@@ -6,4 +6,9 @@
     </style>
 
     <style name="Theme.RafiBrowser" parent="Base.Theme.RafiBrowser" />
+
+    <style name="ChromeMenuAnimation">
+        <item name="android:windowEnterAnimation">@anim/popup_enter</item>
+        <item name="android:windowExitAnimation">@anim/popup_exit</item>
+    </style>
 </resources>

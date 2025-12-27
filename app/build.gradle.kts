@@ -49,6 +49,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
     implementation("androidx.webkit:webkit:1.9.0")
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")

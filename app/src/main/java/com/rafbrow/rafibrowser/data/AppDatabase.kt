@@ -7,11 +7,12 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [HistoryEntity::class, BrowserData::class, PasswordData::class, DownloadData::class],
-    version = 7, // Naikkan versi ke 7 untuk mereset cache
+    version = 8,
     exportSchema = false
 )
-abstract class AppDatabase : RoomDatabase() { // Nama kelas harus bersih tanpa titik
+abstract class AppDatabase : RoomDatabase() {
     abstract fun browserDao(): BrowserDao
+    abstract fun historyDao(): HistoryDao
 
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
