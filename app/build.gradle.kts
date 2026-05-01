@@ -56,4 +56,11 @@ dependencies {
     implementation("androidx.room:room-ktx:$room_version")
     kapt("androidx.room:room-compiler:$room_version")
 
+    val media3_version = "1.2.1"
+    implementation("androidx.media3:media3-exoplayer:$media3_version")
+    implementation("androidx.media3:media3-exoplayer-dash:$media3_version")
+    implementation("androidx.media3:media3-exoplayer-hls:$media3_version")
+    implementation("androidx.media3:media3-ui:$media3_version")
+    implementation("androidx.media3:media3-common:$media3_version")
+
 }

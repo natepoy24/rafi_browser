@@ -3,8 +3,21 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- ... other colors ... -->
+    <!-- The Obsidian Lens Theme Colors -->
+    <color name="surface_container_lowest">#000000</color>
+    <color name="surface">#0e0e0e</color>
+    <color name="surface_container">#191919</color>
+    <color name="surface_container_high">#1f1f1f</color>
+    <color name="surface_container_highest">#262626</color>
+    <color name="surface_bright">#2c2c2c</color>
+    <color name="primary">#c6c6c7</color>
+    <color name="primary_container">#454747</color>
+    <color name="on_surface">#e5e5e5</color>
+    <color name="on_surface_variant">#ababab</color>
+    <color name="outline_variant">#484848</color>
+    
     <color name="incognito_primary">#FF2C2C2C</color>
-    <color name="normal_primary">#FF1E1E1E</color>
-    <color name="purple_500">#6200EE</color>
+    <color name="normal_primary">#FF191919</color>
+    
+    <color name="transparent">#00000000</color>
 </resources>

@@ -30,6 +30,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".PlayerActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:exported="false" />
+
     </application>
 
 </manifest>
