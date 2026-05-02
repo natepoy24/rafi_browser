@@ -39,4 +39,13 @@ interface BrowserDao {
 
     @Query("SELECT * FROM downloads ORDER BY timestamp DESC")
     suspend fun getAllDownloads(): List<DownloadData>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBlockedUrl(blockedUrl: BlockedUrl)
+
+    @Delete
+    suspend fun deleteBlockedUrl(blockedUrl: BlockedUrl)
+
+    @Query("SELECT * FROM blocked_urls")
+    suspend fun getAllBlockedUrls(): List<BlockedUrl>
 }

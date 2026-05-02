@@ -55,6 +55,11 @@ class MenuBottomSheet : BottomSheetDialogFragment() {
             dismiss()
         }
 
+        view.findViewById<LinearLayout>(R.id.optBlocked).setOnClickListener {
+            startActivity(Intent(requireContext(), BlockedUrlActivity::class.java))
+            dismiss()
+        }
+
         view.findViewById<LinearLayout>(R.id.optSettings).setOnClickListener {
             startActivity(Intent(requireContext(), SettingsActivity::class.java))
             dismiss()

@@ -4,8 +4,6 @@ import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
@@ -38,12 +36,8 @@ class PlayerActivity : AppCompatActivity() {
     private var videoTitle: String? = null
     private var userAgent: String? = null
 
-    private val handler = Handler(Looper.getMainLooper())
-
     private val pickSubtitle = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let {
-            applySubtitle(it)
-        }
+        uri?.let { applySubtitle(it) }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -87,13 +81,26 @@ class PlayerActivity : AppCompatActivity() {
         playerView.player = player
 
         videoUrl?.let { url ->
-            val mediaItem = MediaItem.Builder()
-                .setUri(url)
-                .build()
+            val mediaItemBuilder = MediaItem.Builder().setUri(url)
+            
+            // Explicitly set MIME type for adaptive streams
+            when {
+                url.contains(".m3u8") -> mediaItemBuilder.setMimeType(MimeTypes.APPLICATION_M3U8)
+                url.contains(".mpd") -> mediaItemBuilder.setMimeType(MimeTypes.APPLICATION_MPD)
+                url.contains(".mp4") -> mediaItemBuilder.setMimeType(MimeTypes.VIDEO_MP4)
+            }
+            
+            val mediaItem = mediaItemBuilder.build()
             player.setMediaItem(mediaItem)
             player.prepare()
             player.play()
         }
+        
+        player.addListener(object : androidx.media3.common.Player.Listener {
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                Toast.makeText(this@PlayerActivity, "Error: ${error.message}", Toast.LENGTH_LONG).show()
+            }
+        })
     }
 
     private fun applySubtitle(uri: Uri) {
@@ -168,6 +175,16 @@ class PlayerActivity : AppCompatActivity() {
         tvGestureFeedback.animate().alpha(0f).setDuration(500).withEndAction {
             tvGestureFeedback.visibility = View.GONE
         }.start()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        player.pause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        player.play()
     }
 
     override fun onDestroy() {

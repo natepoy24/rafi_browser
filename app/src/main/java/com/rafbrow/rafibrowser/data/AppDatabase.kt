@@ -6,8 +6,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [HistoryEntity::class, BrowserData::class, PasswordData::class, DownloadData::class],
-    version = 9,
+    entities = [HistoryEntity::class, BrowserData::class, PasswordData::class, DownloadData::class, BlockedUrl::class],
+    version = 11,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

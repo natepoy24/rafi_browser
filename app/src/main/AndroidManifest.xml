@@ -15,7 +15,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+        android:theme="@style/Theme.RafiBrowser"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
@@ -34,6 +34,31 @@
             android:name=".PlayerActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:exported="false" />
+
+        <activity
+            android:name=".HistoryActivity"
+            android:theme="@style/Theme.RafiBrowser"
+            android:exported="false" />
+
+        <activity
+            android:name=".BookmarksActivity"
+            android:theme="@style/Theme.RafiBrowser"
+            android:exported="false" />
+
+        <activity
+            android:name=".DownloadsActivity"
+            android:theme="@style/Theme.RafiBrowser"
+            android:exported="false" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:theme="@style/Theme.RafiBrowser"
+            android:exported="false" />
+
+        <activity
+            android:name=".BlockedUrlActivity"
+            android:theme="@style/Theme.RafiBrowser"
             android:exported="false" />
 
     </application>

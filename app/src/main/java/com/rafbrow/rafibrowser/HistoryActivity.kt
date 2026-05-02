@@ -1,68 +1,103 @@
 package com.rafbrow.rafibrowser
 
-import android.content.Context
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.rafbrow.rafibrowser.data.AppDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HistoryActivity : AppCompatActivity() {
+
+    private lateinit var db: AppDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_history)
+        db = AppDatabase.getDatabase(this)
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
             finish()
         }
 
         val container = findViewById<LinearLayout>(R.id.historyContainer)
-        
+
         findViewById<ImageButton>(R.id.btnClear).setOnClickListener {
-            val sharedPref = getSharedPreferences("RafiBrowserPrefs", Context.MODE_PRIVATE)
-            sharedPref.edit().putString("history", "").apply()
-            container.removeAllViews()
+            lifecycleScope.launch(Dispatchers.IO) {
+                db.browserDao().clearHistory()
+                withContext(Dispatchers.Main) {
+                    container.removeAllViews()
+                    addEmptyState(container)
+                }
+            }
         }
 
         loadHistory(container)
     }
 
     private fun loadHistory(container: LinearLayout) {
-        val sharedPref = getSharedPreferences("RafiBrowserPrefs", Context.MODE_PRIVATE)
-        val historyStr = sharedPref.getString("history", "") ?: ""
-        val historyList = historyStr.split(";;;").filter { it.isNotBlank() }.reversed()
-
-        for (item in historyList) {
-            val parts = item.split(":::")
-            if (parts.size >= 2) {
-                val url = parts[0]
-                val title = parts[1]
-
-                val itemView = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(0, 32, 0, 32)
-                    // Removed bottom border to follow "No-Line" rule
+        lifecycleScope.launch(Dispatchers.IO) {
+            val historyList = db.browserDao().getAllHistory()
+            withContext(Dispatchers.Main) {
+                container.removeAllViews()
+                if (historyList.isEmpty()) {
+                    addEmptyState(container)
+                    return@withContext
                 }
+                for (item in historyList) {
+                    val itemView = LinearLayout(this@HistoryActivity).apply {
+                        orientation = LinearLayout.VERTICAL
+                        setPadding(0, 32, 0, 32)
+                        isClickable = true
+                        isFocusable = true
+                        setBackgroundResource(android.R.attr.selectableItemBackground.let {
+                            val a = obtainStyledAttributes(intArrayOf(it))
+                            val resId = a.getResourceId(0, 0)
+                            a.recycle()
+                            resId
+                        })
+                        setOnClickListener {
+                            val intent = android.content.Intent()
+                            intent.putExtra("url", item.url)
+                            setResult(RESULT_OK, intent)
+                            finish()
+                        }
+                    }
 
-                val titleView = TextView(this).apply {
-                    text = title
-                    setTextColor(getColor(R.color.on_surface))
-                    textSize = 18f
+                    val titleView = TextView(this@HistoryActivity).apply {
+                        text = item.title
+                        setTextColor(getColor(R.color.on_surface))
+                        textSize = 18f
+                        maxLines = 1
+                    }
+
+                    val urlView = TextView(this@HistoryActivity).apply {
+                        text = item.url
+                        setTextColor(getColor(R.color.on_surface_variant))
+                        textSize = 14f
+                        maxLines = 1
+                        setPadding(0, 8, 0, 0)
+                    }
+
+                    itemView.addView(titleView)
+                    itemView.addView(urlView)
+                    container.addView(itemView)
                 }
-
-                val urlView = TextView(this).apply {
-                    text = url
-                    setTextColor(getColor(R.color.on_surface_variant))
-                    textSize = 14f
-                    setPadding(0, 8, 0, 0)
-                }
-
-                itemView.addView(titleView)
-                itemView.addView(urlView)
-
-                container.addView(itemView)
             }
         }
+    }
+
+    private fun addEmptyState(container: LinearLayout) {
+        val emptyView = TextView(this).apply {
+            text = "No history yet"
+            setTextColor(getColor(R.color.on_surface_variant))
+            textSize = 16f
+            setPadding(0, 64, 0, 0)
+        }
+        container.addView(emptyView)
     }
 }

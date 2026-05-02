@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var lockOverlay: LinearLayout
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
-    private lateinit var btnNativeSwitch: Button
+    private lateinit var btnNativePlayer: ImageButton
 
     private val tabList = mutableListOf<WebView>()
     private var currentTabIndex = -1
@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
     private val PREFS_NAME = "RafiBrowserPrefs"
     private val KEY_PIN = "app_pin"
 
-    private val adBlockList = listOf("tsyndicate.com", "diffusedpassionquaking.com", "doubleclick.net", "popads.net", "onclickads.net")
+    private val adBlockList = mutableListOf<String>()
 
     // --- INTERFACE JAVASCRIPT ---
     inner class WebAppInterface {
@@ -82,7 +82,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 detectedVideoUrl = url
                 detectedVideoTitle = title
-                btnNativeSwitch.visibility = View.VISIBLE
+                btnNativePlayer.visibility = View.VISIBLE
             }
         }
 
@@ -90,31 +90,20 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun setFakeFullscreenUI(enabled: Boolean) {
             runOnUiThread {
-                val topBar = findViewById<LinearLayout>(R.id.topBar)
+                val topBar = findViewById<LinearLayout>(R.id.topBarContainer)
                 val bottomBar = findViewById<LinearLayout>(R.id.bottomBar)
 
                 if (enabled) {
-                    topBar.visibility = View.GONE
+                    topBar?.visibility = View.GONE
                     tabContainer.visibility = View.GONE
                     bottomBar?.visibility = View.GONE
                     toggleImmersiveMode(true)
                 } else {
-                    topBar.visibility = View.VISIBLE
+                    topBar?.visibility = View.VISIBLE
                     tabContainer.visibility = View.VISIBLE
                     bottomBar?.visibility = View.VISIBLE
                     toggleImmersiveMode(false)
                 }
-            }
-        }
-    }
-
-    private val pickSubtitleFile = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let {
-            val content = contentResolver.openInputStream(it)?.bufferedReader()?.use { it.readText() }
-            if (content != null) {
-                val sanitized = content.replace("`", "\\`").replace("$", "\\$").replace("\n", "\\n").replace("\r", "")
-                getCurrentWebView()?.evaluateJavascript("window.loadSubtitleContent(`${sanitized}`);", null)
-                Toast.makeText(this, "Subtitle Dimuat!", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -131,9 +120,9 @@ class MainActivity : AppCompatActivity() {
         lockOverlay = findViewById(R.id.lockOverlay)
         swipeRefresh = findViewById(R.id.swipeRefresh)
         progressBar = findViewById(R.id.progressBar)
-        btnNativeSwitch = findViewById(R.id.btnNativeSwitch)
+        btnNativePlayer = findViewById(R.id.btnNativePlayer)
 
-        btnNativeSwitch.setOnClickListener {
+        btnNativePlayer.setOnClickListener {
             val intent = Intent(this@MainActivity, PlayerActivity::class.java).apply {
                 putExtra("videoUrl", detectedVideoUrl)
                 putExtra("videoTitle", detectedVideoTitle)
@@ -159,15 +148,9 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.topBar)) { v, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(0, bars.top, 0, 0)
-            insets
-        }
-
         findViewById<ImageButton>(R.id.btnNewTabIcon).setOnClickListener { addNewTab("https://www.google.com") }
         findViewById<ImageButton>(R.id.btnCloseTabIcon).setOnClickListener { closeCurrentTab() }
-        findViewById<ImageButton>(R.id.btnSettings).setOnClickListener { showChromeMenu(it) }
+        findViewById<ImageButton>(R.id.btnSettings).setOnClickListener { showMenuBottomSheet() }
         findViewById<ImageButton>(R.id.btnUndo).setOnClickListener { getCurrentWebView()?.goBack() }
         findViewById<ImageButton>(R.id.btnGo).setOnClickListener { loadWeb(etUrl.text.toString()) }
 
@@ -180,6 +163,22 @@ class MainActivity : AppCompatActivity() {
         swipeRefresh.setOnRefreshListener { getCurrentWebView()?.reload() }
         if (savedInstanceState == null) addNewTab("https://www.google.com")
         setupSecurity()
+        loadBlockedUrls()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadBlockedUrls()
+    }
+
+    private fun loadBlockedUrls() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val list = db.browserDao().getAllBlockedUrls()
+            withContext(Dispatchers.Main) {
+                adBlockList.clear()
+                adBlockList.addAll(list.map { it.pattern })
+            }
+        }
     }
 
     private fun addNewTab(url: String) {
@@ -218,13 +217,25 @@ class MainActivity : AppCompatActivity() {
     private fun updateTabSwitcherUI() {
         tabContainer.removeAllViews()
         for (i in tabList.indices) {
+            val isActive = i == currentTabIndex
             val btn = Button(this).apply {
                 val title = tabList[i].title ?: "Tab ${i + 1}"
-                text = if (title.length > 8) title.substring(0, 6) + ".." else title
-                textSize = 10f
+                text = if (title.length > 12) title.substring(0, 10) + "…" else title
+                textSize = 12f
                 isAllCaps = false
-                backgroundTintList = ColorStateList.valueOf(if (i == currentTabIndex) Color.parseColor("#BB86FC") else Color.parseColor("#2C2C2C"))
-                setTextColor(if (i == currentTabIndex) Color.BLACK else Color.WHITE)
+                setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(8))
+                backgroundTintList = ColorStateList.valueOf(
+                    if (isActive) Color.parseColor("#2c2c2c") else Color.parseColor("#131313")
+                )
+                setTextColor(
+                    if (isActive) Color.parseColor("#c6c6c7") else Color.parseColor("#ababab")
+                )
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                lp.marginEnd = dpToPx(8)
+                layoutParams = lp
                 setOnClickListener { switchTab(i) }
             }
             tabContainer.addView(btn)
@@ -237,6 +248,14 @@ class MainActivity : AppCompatActivity() {
         val url = if (query.contains(".") && !query.contains(" ")) {
             if (query.startsWith("http")) query else "https://$query"
         } else "https://www.google.com/search?q=$query"
+
+        // Pengecekan Blokir sebelum navigasi utama
+        for (pattern in adBlockList) {
+            if (url.contains(pattern, ignoreCase = true)) {
+                Toast.makeText(this, "URL ini diblokir!", Toast.LENGTH_SHORT).show()
+                return
+            }
+        }
         getCurrentWebView()?.loadUrl(url)
     }
 
@@ -280,18 +299,44 @@ class MainActivity : AppCompatActivity() {
         wv.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
                 super.onPageStarted(view, url, favicon)
-                btnNativeSwitch.visibility = View.GONE
+                btnNativePlayer.visibility = View.GONE
             }
 
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url = request?.url.toString()
-                for (ad in adBlockList) { if (url.contains(ad)) return true }
+                for (pattern in adBlockList) {
+                    if (url.contains(pattern, ignoreCase = true)) {
+                        Toast.makeText(this@MainActivity, "Diblokir oleh sistem", Toast.LENGTH_SHORT).show()
+                        return true
+                    }
+                }
                 return false
             }
+
+            override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
+                val url = request?.url.toString()
+                
+                // Pengecekan Blokir
+                for (pattern in adBlockList) {
+                    if (url.contains(pattern, ignoreCase = true)) {
+                        return WebResourceResponse("text/plain", "UTF-8", null)
+                    }
+                }
+
+                if (url.contains(".m3u8") || url.contains(".mpd") || url.contains(".mp4")) {
+                    runOnUiThread {
+                        detectedVideoUrl = url
+                        detectedVideoTitle = view?.title ?: "Video Terdeteksi"
+                        btnNativePlayer.visibility = View.VISIBLE
+                    }
+                }
+                return super.shouldInterceptRequest(view, request)
+            }
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 if (view == getCurrentWebView()) etUrl.setText(url)
                 swipeRefresh.isRefreshing = false
-                injectCustomPlayerLogic(view as WebView)
+                injectVideoSniffer(view as WebView)
                 if (!isIncognito && url != null) {
                     val pageTitle = view?.title ?: "No Title"
                     lifecycleScope.launch(Dispatchers.IO) { db.browserDao().insertHistory(HistoryEntity(url = url, title = pageTitle)) }
@@ -333,46 +378,18 @@ class MainActivity : AppCompatActivity() {
         findViewById<RelativeLayout>(R.id.mainRootLayout).visibility = View.VISIBLE
 
         // Kembalikan UI jika sebelumnya masuk lewat fake fullscreen
-        findViewById<LinearLayout>(R.id.topBar).visibility = View.VISIBLE
+        findViewById<LinearLayout>(R.id.topBarContainer)?.visibility = View.VISIBLE
         tabContainer.visibility = View.VISIBLE
         findViewById<LinearLayout>(R.id.bottomBar)?.visibility = View.VISIBLE
     }
 
-    private fun injectCustomPlayerLogic(wv: WebView) {
-        val d = "$"
+    private fun injectVideoSniffer(wv: WebView) {
         val jsCode = """
             (function() {
-                if (window.isMyPlayerInjected) return;
-                window.isMyPlayerInjected = true;
-                var currentSubtitleData = []; var lastTapTime = 0; var holdTimer = null;
-
-                document.addEventListener('contextmenu', function(e) {
-                    let el = e.target;
-                    while (el && el.tagName !== 'A') el = el.parentElement;
-                    if (el) AndroidInterface.storeLinkText(el.innerText || el.textContent);
-                });
-
-                // PAKSA FULLSCREEN + SEMBUNYIKAN UI ANDROID
-                window.forceFullscreenVideo = function() {
-                    var v = document.querySelector('video');
-                    if (!v) { alert('Video tidak ditemukan.'); return; }
-                    
-                    if (document.body.classList.contains('fake-fullscreen-mode')) {
-                        document.body.classList.remove('fake-fullscreen-mode');
-                        v.style.cssText = '';
-                        AndroidInterface.setFakeFullscreenUI(false);
-                    } else {
-                        document.body.classList.add('fake-fullscreen-mode');
-                        v.style.cssText = 'position:fixed !important; top:0 !important; left:0 !important; width:100vw !important; height:100vh !important; z-index:2147483646 !important; background:black !important; object-fit:contain !important;';
-                        AndroidInterface.setFakeFullscreenUI(true);
-                    }
-                };
-
-                function initPlayer() {
+                function sniffVideo() {
                     var vids = document.getElementsByTagName('video');
                     for(var i=0; i<vids.length; i++) {
                         var v = vids[i];
-                        setupOverlay(v);
                         if (!v.myUrlDetected) {
                             var src = v.src;
                             if (!src) {
@@ -386,139 +403,40 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
-
-                function setupOverlay(video) {
-                    if (video.hasMyOverlay || video.offsetWidth < 50) return;
-                    video.hasMyOverlay = true;
-                    var overlay = document.createElement('div');
-                    overlay.className = 'my-custom-overlay';
-                    overlay.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; z-index:2147483647; display:flex; flex-direction:column; align-items:center; -webkit-tap-highlight-color: transparent; pointer-events: auto; padding-bottom: 80px;';
-                    
-                    var speedIcon = document.createElement('div');
-                    speedIcon.innerText = '2x Speed';
-                    speedIcon.style.cssText = 'color:white; font-size:14px; font-weight:bold; background:rgba(0,0,0,0.6); padding:4px 12px; border-radius:20px; margin-top: 20px; display:none; pointer-events: none;';
-                    overlay.appendChild(speedIcon);
-
-                    var skipText = document.createElement('div');
-                    skipText.style.cssText = 'color:white; font-size:25px; font-weight:bold; margin-top: auto; margin-bottom: auto; opacity: 0; transition: opacity 0.3s; pointer-events: none;';
-                    overlay.appendChild(skipText);
-
-                    var subBox = document.createElement('div');
-                    subBox.style.cssText = 'position:absolute; bottom:15%; width:90%; color:#FFFFFF; font-size:18px; text-shadow: 2px 2px 3px #000; text-align:center; padding:8px; border-radius:8px; pointer-events: none; display: none; background:rgba(0,0,0,0.5);';
-                    overlay.appendChild(subBox);
-
-                    overlay.addEventListener('touchstart', function(e) {
-                        holdTimer = setTimeout(function() { video.playbackRate = 2.0; speedIcon.style.display = 'block'; }, 400);
-                    });
-
-                    overlay.addEventListener('touchend', function(e) {
-                        clearTimeout(holdTimer); video.playbackRate = 1.0; speedIcon.style.display = 'none';
-                        var now = Date.now(); var diff = now - lastTapTime;
-                        var x = e.changedTouches[0].clientX; var w = overlay.offsetWidth;
-                        if (diff < 300 && diff > 0) {
-                            if (e.cancelable) e.preventDefault();
-                            if (x < w * 0.4) { video.currentTime -= 10; skipText.innerText = "⏪ -10s"; skipText.style.opacity = 1; }
-                            else if (x > w * 0.6) { video.currentTime += 10; skipText.innerText = "⏩ +10s"; skipText.style.opacity = 1; }
-                            setTimeout(() => skipText.style.opacity = 0, 600);
-                        } else {
-                            if (x > w * 0.4 && x < w * 0.6) { if (video.paused) video.play(); else video.pause(); }
-                        }
-                        lastTapTime = now;
-                    });
-
-                    if (video.parentElement) {
-                        video.parentElement.style.position = 'relative';
-                        video.parentElement.appendChild(overlay);
-                    }
-
-                    video.addEventListener('timeupdate', function() {
-                        if (currentSubtitleData.length > 0) {
-                            var t = video.currentTime;
-                            var s = currentSubtitleData.find(x => t >= x.start && t <= x.end);
-                            if (s) { subBox.innerText = s.text; subBox.style.display = 'block'; } 
-                            else { subBox.style.display = 'none'; }
-                        }
-                    });
-                }
-
-                window.loadSubtitleContent = function(srt) {
-                    currentSubtitleData = [];
-                    var pattern = /(\d+)\n(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})\n([\s\S]*?)(?=\n\n|\n${d}|${d})/g;
-                    var match;
-                    function t2s(t) { var p = t.split(':'); var s = p[2].split(','); return parseInt(p[0])*3600 + parseInt(p[1])*60 + parseInt(s[0]) + parseInt(s[1])/1000; }
-                    while ((match = pattern.exec(srt)) !== null) {
-                        currentSubtitleData.push({ start: t2s(match[2]), end: t2s(match[3]), text: match[4].replace(/\n/g, ' ').replace(/<[^>]*>/g, '') });
-                    }
-                };
-                setInterval(initPlayer, 2000);
+                setInterval(sniffVideo, 2000);
             })();
         """.trimIndent()
         wv.evaluateJavascript(jsCode, null)
     }
 
-    private fun showChromeMenu(anchor: View) {
-        val layout = layoutInflater.inflate(R.layout.popup_browser_menu, null)
-        val popup = PopupWindow(layout, dpToPx(240), ViewGroup.LayoutParams.WRAP_CONTENT, true)
-        popup.animationStyle = R.style.ChromeMenuAnimation
-
-        layout.findViewById<ImageButton>(R.id.menuForward).setOnClickListener {
-            if (getCurrentWebView()?.canGoForward() == true) getCurrentWebView()?.goForward()
-            popup.dismiss()
-        }
-        layout.findViewById<ImageButton>(R.id.menuFullscreen).setOnClickListener {
-            getCurrentWebView()?.evaluateJavascript("window.forceFullscreenVideo();", null)
-            popup.dismiss()
-        }
-        layout.findViewById<ImageButton>(R.id.menuAddBookmark).setOnClickListener {
-            val wv = getCurrentWebView()
-            if (wv?.url != null) {
-                lifecycleScope.launch(Dispatchers.IO) { db.browserDao().insertBrowserData(BrowserData(url = wv.url!!, title = wv.title!!, content = "", type = "BOOKMARK")) }
-                Toast.makeText(this, "Tersimpan!", Toast.LENGTH_SHORT).show()
+    private fun showMenuBottomSheet() {
+        val sheet = MenuBottomSheet()
+        sheet.listener = object : MenuBottomSheet.MenuListener {
+            override fun onForwardClicked() {
+                if (getCurrentWebView()?.canGoForward() == true) getCurrentWebView()?.goForward()
             }
-            popup.dismiss()
+            override fun onFullscreenClicked() {
+                getCurrentWebView()?.evaluateJavascript("window.forceFullscreenVideo();", null)
+            }
+            override fun onAddBookmarkClicked() {
+                val wv = getCurrentWebView()
+                if (wv?.url != null) {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        db.browserDao().insertBrowserData(
+                            BrowserData(url = wv.url!!, title = wv.title ?: "", content = "", type = "BOOKMARK")
+                        )
+                    }
+                    Toast.makeText(this@MainActivity, "Tersimpan!", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
-        layout.findViewById<ImageButton>(R.id.menuCC).setOnClickListener { pickSubtitleFile.launch("*/*"); popup.dismiss() }
-
-        layout.findViewById<TextView>(R.id.optBookmarks).setOnClickListener { showBookmarkListDialog(); popup.dismiss() }
-        layout.findViewById<TextView>(R.id.optHistory).setOnClickListener { showRiwayatDialog(); popup.dismiss() }
-        layout.findViewById<TextView>(R.id.optDownloads).setOnClickListener { startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)); popup.dismiss() }
-
-        val txtIncognito = layout.findViewById<TextView>(R.id.optIncognito)
-        txtIncognito.text = if (isIncognito) "🌐 Normal" else "🕶️ Penyamaran"
-        txtIncognito.setOnClickListener { isIncognito = !isIncognito; animateThemeChange(isIncognito); popup.dismiss() }
-        layout.findViewById<TextView>(R.id.optChangePin).setOnClickListener { /* showChangePinDialog() */ }
-        popup.showAsDropDown(anchor, 0, 0, Gravity.END)
+        sheet.show(supportFragmentManager, "MenuBottomSheet")
     }
 
     private fun showSavePasswordDialog(site: String, user: String, pass: String) {
         AlertDialog.Builder(this).setTitle("Simpan Sandi?").setMessage("Simpan untuk $site?")
             .setPositiveButton("Simpan") { _, _ -> lifecycleScope.launch(Dispatchers.IO) { db.browserDao().insertBrowserData(BrowserData(url = site, title = user, content = pass, type = "PASSWORD")) } }
             .setNegativeButton("Tidak", null).show()
-    }
-
-    private fun showRiwayatDialog() { lifecycleScope.launch(Dispatchers.IO) { val data = db.browserDao().getAllHistory(); withContext(Dispatchers.Main) { showCustomActionList("📜 Riwayat", data, true) } } }
-    private fun showBookmarkListDialog() { lifecycleScope.launch(Dispatchers.IO) { val data = db.browserDao().getBookmarks(); withContext(Dispatchers.Main) { showCustomActionList("🔖 Bookmarks", data, false) } } }
-
-    private fun showCustomActionList(title: String, data: List<Any>, isHistory: Boolean) {
-        val titles = data.map { if (it is HistoryEntity) it.title else (it as BrowserData).title }
-        AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert).setTitle(title)
-            .setAdapter(ArrayAdapter(this, android.R.layout.simple_list_item_1, titles)) { _, which -> showItemOptions(data[which], isHistory) }
-            .setNegativeButton("Tutup", null).show()
-    }
-
-    private fun showItemOptions(item: Any, isHistory: Boolean) {
-        val url = if (item is HistoryEntity) item.url else (item as BrowserData).url
-        val id = if (item is HistoryEntity) item.id else (item as BrowserData).id
-        AlertDialog.Builder(this).setItems(arrayOf("Buka", "Salin Link", "Hapus")) { _, w ->
-            when (w) {
-                0 -> loadWeb(url)
-                1 -> (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("URL", url))
-                2 -> lifecycleScope.launch(Dispatchers.IO) {
-                    if (isHistory) db.browserDao().deleteHistoryItem(id) else db.browserDao().deleteBrowserDataItem(id)
-                    withContext(Dispatchers.Main) { if (isHistory) showRiwayatDialog() else showBookmarkListDialog() }
-                }
-            }
-        }.show()
     }
 
     private fun setupSecurity() {
@@ -535,13 +453,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun animateThemeChange(incognito: Boolean) {
-        val colorFrom = if (incognito) Color.parseColor("#1E1E1E") else Color.parseColor("#2C2C2C")
-        val colorTo = if (incognito) Color.parseColor("#2C2C2C") else Color.parseColor("#1E1E1E")
+        val colorFrom = if (incognito) ContextCompat.getColor(this, R.color.surface_container) else ContextCompat.getColor(this, R.color.incognito_primary)
+        val colorTo = if (incognito) ContextCompat.getColor(this, R.color.incognito_primary) else ContextCompat.getColor(this, R.color.surface_container)
         val anim = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
         anim.duration = 500
-        anim.addUpdateListener { findViewById<LinearLayout>(R.id.topBar).setBackgroundColor(it.animatedValue as Int) }
+        anim.addUpdateListener { 
+            findViewById<LinearLayout>(R.id.topBar).setBackgroundColor(it.animatedValue as Int)
+            findViewById<LinearLayout>(R.id.bottomBar).setBackgroundColor(it.animatedValue as Int)
+        }
         anim.start()
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !incognito
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
     }
 
     private fun dpToPx(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()

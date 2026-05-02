@@ -35,3 +35,10 @@ data class DownloadData(
     @ColumnInfo(name = "url") val url: String,
     @ColumnInfo(name = "timestamp") val timestamp: Long = System.currentTimeMillis()
 )
+
+@Entity(tableName = "blocked_urls")
+data class BlockedUrl(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @ColumnInfo(name = "pattern") val pattern: String,
+    @ColumnInfo(name = "reason") val reason: String? = null
+)

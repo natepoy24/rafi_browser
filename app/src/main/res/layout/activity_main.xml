@@ -4,13 +4,80 @@
     android:id="@+id/mainRootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_container_lowest">
+    android:background="@color/surface_container_lowest"
+    android:fitsSystemWindows="true">
+
+    <!-- Top Container: URL Bar and Progress Bar -->
+    <LinearLayout
+        android:id="@+id/topBarContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:orientation="vertical"
+        android:elevation="8dp">
+
+        <!-- Top Bar (Command Center) -->
+        <LinearLayout
+            android:id="@+id/topBar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@color/surface_container"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp">
+
+            <ImageButton
+                android:id="@+id/btnUndo"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_revert"
+                app:tint="@color/on_surface" />
+
+            <EditText
+                android:id="@+id/etUrl"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="8dp"
+                android:background="@drawable/floating_search_bg"
+                android:hint="Cari atau URL"
+                android:textColorHint="@color/on_surface_variant"
+                android:textColor="@color/on_surface"
+                android:textSize="14sp"
+                android:inputType="textUri"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:imeOptions="actionGo"
+                android:paddingHorizontal="16dp" />
+
+            <ImageButton
+                android:id="@+id/btnGo"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_send"
+                app:tint="@color/primary" />
+        </LinearLayout>
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:indeterminate="false"
+            android:progressTint="@color/primary"
+            android:progressBackgroundTint="@color/surface_container"
+            android:visibility="gone" />
+    </LinearLayout>
 
     <!-- Web Content -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@id/topBarContainer"
         android:layout_above="@+id/bottomBar">
 
         <FrameLayout
@@ -19,78 +86,6 @@
             android:layout_height="match_parent"
             android:background="@color/surface" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-    <!-- Progress Bar -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="2dp"
-        android:layout_below="@+id/topBar"
-        android:indeterminate="false"
-        android:progressTint="@color/primary"
-        android:progressBackgroundTint="@color/surface_container"
-        android:visibility="gone" />
-
-    <!-- Top Bar (Command Center) - Floating effect -->
-    <LinearLayout
-        android:id="@+id/topBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/floating_search_bg"
-        android:elevation="12dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="8dp">
-
-        <ImageButton
-            android:id="@+id/btnUndo"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_revert"
-            app:tint="@color/on_surface" />
-
-        <EditText
-            android:id="@+id/etUrl"
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="1"
-            android:background="@null"
-            android:hint="Cari atau URL"
-            android:textColorHint="@color/on_surface_variant"
-            android:textColor="@color/on_surface"
-            android:textSize="16sp"
-            android:inputType="textUri"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:imeOptions="actionGo"
-            android:paddingHorizontal="8dp" />
-
-        <ImageButton
-            android:id="@+id/btnGo"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_send"
-            app:tint="@color/primary" />
-    </LinearLayout>
-
-    <Button
-        android:id="@+id/btnNativeSwitch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/bottomBar"
-        android:layout_alignParentEnd="true"
-        android:layout_margin="24dp"
-        android:backgroundTint="@color/primary"
-        android:paddingHorizontal="16dp"
-        android:text="Native Player"
-        android:textColor="@color/surface_container_lowest"
-        android:visibility="gone"
-        android:elevation="12dp" />
 
     <!-- Bottom Bar (Fluid Hub) -->
     <LinearLayout
@@ -119,7 +114,7 @@
             android:layout_weight="1"
             android:scrollbars="none"
             android:layout_marginHorizontal="8dp">
-            
+
             <LinearLayout
                 android:id="@+id/tabContainer"
                 android:layout_width="wrap_content"
@@ -136,7 +131,16 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
             app:tint="@color/on_surface_variant" />
-            
+
+        <ImageButton
+            android:id="@+id/btnNativePlayer"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_play"
+            android:visibility="gone"
+            app:tint="@color/primary" />
+
         <ImageButton
             android:id="@+id/btnSettings"
             android:layout_width="48dp"
@@ -175,7 +179,7 @@
             android:textStyle="bold"
             android:letterSpacing="-0.02"
             android:layout_marginBottom="48dp" />
-            
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
