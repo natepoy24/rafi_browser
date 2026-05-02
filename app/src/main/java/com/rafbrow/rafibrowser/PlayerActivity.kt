@@ -15,6 +15,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
@@ -70,6 +72,7 @@ class PlayerActivity : AppCompatActivity() {
         setupGestureControls()
     }
 
+    @OptIn(UnstableApi::class)
     private fun initializePlayer() {
         val dataSourceFactory = DefaultHttpDataSource.Factory()
         userAgent?.let { dataSourceFactory.setUserAgent(it) }
@@ -103,6 +106,7 @@ class PlayerActivity : AppCompatActivity() {
         })
     }
 
+    @OptIn(UnstableApi::class)
     private fun applySubtitle(uri: Uri) {
         videoUrl?.let { url ->
             val subtitleConfig = MediaItem.SubtitleConfiguration.Builder(uri)
